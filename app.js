@@ -57,6 +57,16 @@ const handleShoot = () => {
   }
 };
 
+const handleEnemyShoot = (enemy) => {
+  const enemyX = enemy.x + enemyOffset[0] * enemyOffsetStep[0];
+  const enemyY = enemy.y + enemyOffset[1] * enemyOffsetStep[1];
+  bullets.push({
+    x: enemyX,
+    y: enemyY,
+    fromPlayer: false,
+  });
+};
+
 const initCanvas = () => {
   canvas = document.getElementById("game");
   ctx = canvas.getContext("2d");
@@ -128,19 +138,17 @@ const physicsLoop = () => {
 
   enemies.forEach((enemy, iE) => {
     // Check for bullet-enemy collision
-    bullets
-      .filter((bullet) => bullet.fromPlayer)
-      .forEach((bullet, iB) => {
-        if (checkPointEnemyCollision(bullet.x, bullet.y, enemy)) {
-          // Enemy hit by bullet
-          // Destroy bullet
-          bullets[iB].y = -1;
-          // Destroy enemy
-          enemies[iE].y = -9999;
-          // Add score
-          gameState.score += enemies[iE].points;
-        }
-      });
+    bullets.forEach((bullet, iB) => {
+      if (!bullet.fromPlayer) return;
+      // Collision check
+      if (!checkPointEnemyCollision(bullet.x, bullet.y, enemy)) return;
+      // Destroy bullet
+      bullets[iB].y = -1;
+      // Destroy enemy
+      enemies[iE].y = -9999;
+      // Add score
+      gameState.score += enemies[iE].points;
+    });
 
     // Check for player-enemy collision
     if (checkPointEnemyCollision(gameState.playerX, gameState.playerY, enemy)) {
@@ -149,14 +157,33 @@ const physicsLoop = () => {
     }
   });
 
+  // Check bullet-player collision
+  bullets
+    .filter((bullet) => !bullet.fromPlayer)
+    .forEach((bullet) => {
+      if (!checkPointPlayerCollision(bullet.x, bullet.y)) return;
+      gameState.isPlayerDead = true;
+    });
+
   // Clean up enemies
   enemies = enemies.filter((enemy) => enemy.y >= 0);
+
+  // Ran out of enemies
+  if (enemies.length === 0) {
+    initEnemies();
+  }
 
   // Update enemy positions
   if (physicsFrame % 30 === 0) {
     if (enemyOffset[1] % 2 === 0) enemyOffset[0]++;
     else enemyOffset[0]--;
     if (enemyOffset[0] >= enemyStepsX || enemyOffset[0] <= 0) enemyOffset[1]++;
+  }
+
+  // Enemy shoot
+  if (physicsFrame % 60 === 0) {
+    handleEnemyShoot(enemies[Math.floor(Math.random() * enemies.length)]);
+    handleEnemyShoot(enemies[Math.floor(Math.random() * enemies.length)]);
   }
 };
 
@@ -168,6 +195,16 @@ const checkPointEnemyCollision = (pointX, pointY, enemy) => {
     pointY > enemyY &&
     pointX < enemyX + enemy.sprite.width &&
     pointY < enemyY + enemy.sprite.height
+  );
+};
+
+const checkPointPlayerCollision = (pointX, pointY) => {
+  const imgPlayer = document.getElementById("imgPlayer");
+  return (
+    pointX > gameState.playerX - imgPlayer.width / 2 &&
+    pointX < gameState.playerX + imgPlayer.width / 2 &&
+    pointY > gameState.playerY &&
+    pointY < gameState.playerY + imgPlayer.height
   );
 };
 
