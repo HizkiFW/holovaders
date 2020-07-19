@@ -11,6 +11,7 @@ let keyStates = {
   ArrowLeft: false,
   ArrowRight: false,
 };
+const shootThrottle = 1000;
 // Bullet info
 // [x, y]
 let bullets = [];
@@ -43,8 +44,13 @@ window.onload = () => {
   physicsLoop();
 };
 
+let lastShoot = 0;
 const handleShoot = () => {
-  bullets.push([gameState.playerX, gameState.playerY]);
+  const now = new Date().getTime();
+  if (now - lastShoot >= shootThrottle) {
+    bullets.push([gameState.playerX, gameState.playerY]);
+    lastShoot = now;
+  }
 };
 
 const initCanvas = () => {
