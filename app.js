@@ -70,8 +70,16 @@ const initEnemies = () => {
         x: offsetX + i * enemySize,
         y: layer * enemySize,
         sprite: document.getElementById("img" + layer),
+        points: (5 - layer) * 10,
       });
     }
+    const layer = 4;
+    enemies.push({
+      x: offsetX + i * enemySize,
+      y: (layer + 1) * enemySize,
+      sprite: document.getElementById("img" + layer),
+      points: (5 - layer) * 10,
+    });
   }
 };
 
@@ -108,7 +116,7 @@ const physicsLoop = () => {
         // Destroy enemy
         enemies[iE].y = -9999;
         // Add score
-        gameState.score += 10;
+        gameState.score += enemies[iE].points;
       }
     });
 
