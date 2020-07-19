@@ -4,6 +4,8 @@ let gameState = {
   playerX: 400,
   playerY: 500,
   isPlayerDead: false,
+  isGameStarted: false,
+  score: 0,
 };
 let keyStates = {
   ArrowLeft: false,
@@ -24,7 +26,10 @@ let physicsFrame = 0;
 
 window.onkeydown = (e) => {
   keyStates[e.key] = true;
-  if (e.key === " ") handleShoot();
+  if (e.key === " ") {
+    if (gameState.isGameStarted) handleShoot();
+    else gameState.isGameStarted = true;
+  }
 };
 window.onkeyup = (e) => {
   keyStates[e.key] = false;
@@ -68,7 +73,7 @@ const physicsLoop = () => {
   physicsFrame++;
   setTimeout(physicsLoop, 1000 / 60);
 
-  if (gameState.isPlayerDead) return;
+  if (gameState.isPlayerDead || !gameState.isGameStarted) return;
 
   // Handle key down
   if (keyStates.ArrowLeft) {
@@ -96,6 +101,8 @@ const physicsLoop = () => {
         bullets[iB][1] = -1;
         // Destroy enemy
         enemies[iE].y = -9999;
+        // Add score
+        gameState.score += 10;
       }
     });
 
@@ -157,19 +164,32 @@ const drawLoop = () => {
     );
   });
 
+  // Draw score
+  drawScoreText();
+
   // Game over screen
   if (gameState.isPlayerDead) {
-    ctx.font = "48px monospace";
-    ctx.textAlign = "center";
-    ctx.fillStyle = "#FFF";
-    ctx.fillRect(0, canvas.height / 2 - 40, canvas.width, 70);
-    ctx.fillStyle = "#000";
-    ctx.fillText("Game Over", canvas.width / 2, canvas.height / 2);
-    ctx.font = "24px monospace";
-    ctx.fillText(
-      "Refresh to restart",
-      canvas.width / 2,
-      canvas.height / 2 + 24
-    );
+    drawCenterText("Game Over", "Refresh to restart");
+  } else if (!gameState.isGameStarted) {
+    drawCenterText("HOLOVADERS", "Press [space] to start");
   }
+};
+
+const drawScoreText = () => {
+  ctx.font = "bold 20px monospace";
+  ctx.textAlign = "left";
+  ctx.fillStyle = "#0D0";
+  ctx.fillText("SCORE", 10, 25);
+  ctx.fillText(gameState.score, 10, 45);
+};
+
+const drawCenterText = (bigText, smallText) => {
+  ctx.font = "48px monospace";
+  ctx.textAlign = "center";
+  ctx.fillStyle = "#FFF";
+  ctx.fillRect(0, canvas.height / 2 - 42, canvas.width, 75);
+  ctx.fillStyle = "#000";
+  ctx.fillText(bigText, canvas.width / 2, canvas.height / 2);
+  ctx.font = "24px monospace";
+  ctx.fillText(smallText, canvas.width / 2, canvas.height / 2 + 24);
 };
