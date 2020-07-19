@@ -11,17 +11,17 @@ let keyStates = {
   ArrowLeft: false,
   ArrowRight: false,
 };
-const shootThrottle = 1000;
+let shootThrottle = 1000;
 // Bullet info
-// [x, y]
 let bullets = [];
 let enemies = [];
+let shields = [];
 // Offset in units (not pixels)
 // 0 => horizontal movement, positive goes right
 // 1 => vertical movement, positive goes down
 let enemyOffset = [0, 0];
-const enemyOffsetStep = [10, 5];
-const enemyStepsX = 5;
+const enemyOffsetStep = [5, 5];
+const enemyStepsX = 30;
 let drawFrame = 0;
 let physicsFrame = 0;
 
@@ -48,7 +48,11 @@ let lastShoot = 0;
 const handleShoot = () => {
   const now = new Date().getTime();
   if (now - lastShoot >= shootThrottle) {
-    bullets.push([gameState.playerX, gameState.playerY]);
+    bullets.push({
+      x: gameState.playerX,
+      y: gameState.playerY,
+      fromPlayer: true,
+    });
     lastShoot = now;
   }
 };
@@ -58,25 +62,38 @@ const initCanvas = () => {
   ctx = canvas.getContext("2d");
 };
 
+const initShields = () => {
+  const paddingH = 100;
+  const nShields = 3;
+
+  for (let i = 0; i < nShields; i++) {
+    shields.push({
+      x: paddingH + (canvas.width - 2 * paddingH) / nShields,
+      health: 100,
+    });
+  }
+};
+
 const initEnemies = () => {
   const nEnemiesX = 11;
-  const enemySize = 64;
-  const enemyRowWidth = nEnemiesX * enemySize;
+  const enemyWidth = 55;
+  const enemyHeight = 52;
+  const enemyRowWidth = nEnemiesX * enemyWidth;
   const totalTravelX = enemyStepsX * enemyOffsetStep[0];
   const offsetX = (canvas.width - enemyRowWidth - totalTravelX) / 2;
   for (let i = 0; i < nEnemiesX; i++) {
     for (let layer = 1; layer < 5; layer++) {
       enemies.push({
-        x: offsetX + i * enemySize,
-        y: layer * enemySize,
+        x: offsetX + i * enemyWidth,
+        y: layer * enemyHeight,
         sprite: document.getElementById("img" + layer),
         points: (5 - layer) * 10,
       });
     }
     const layer = 4;
     enemies.push({
-      x: offsetX + i * enemySize,
-      y: (layer + 1) * enemySize,
+      x: offsetX + i * enemyWidth,
+      y: (layer + 1) * enemyHeight,
       sprite: document.getElementById("img" + layer),
       points: (5 - layer) * 10,
     });
@@ -103,22 +120,27 @@ const physicsLoop = () => {
 
   // Update bullet positions and remove off-screen ones
   bullets = bullets
-    .map((bullet) => [bullet[0], bullet[1] - 5])
-    .filter((bullet) => bullet[1] > 0);
+    .map((bullet) => ({
+      ...bullet,
+      y: bullet.y + (bullet.fromPlayer ? -5 : 5),
+    }))
+    .filter((bullet) => bullet.y > 0);
 
   enemies.forEach((enemy, iE) => {
     // Check for bullet-enemy collision
-    bullets.forEach((bullet, iB) => {
-      if (checkPointEnemyCollision(bullet[0], bullet[1], enemy)) {
-        // Enemy hit by bullet
-        // Destroy bullet
-        bullets[iB][1] = -1;
-        // Destroy enemy
-        enemies[iE].y = -9999;
-        // Add score
-        gameState.score += enemies[iE].points;
-      }
-    });
+    bullets
+      .filter((bullet) => bullet.fromPlayer)
+      .forEach((bullet, iB) => {
+        if (checkPointEnemyCollision(bullet.x, bullet.y, enemy)) {
+          // Enemy hit by bullet
+          // Destroy bullet
+          bullets[iB].y = -1;
+          // Destroy enemy
+          enemies[iE].y = -9999;
+          // Add score
+          gameState.score += enemies[iE].points;
+        }
+      });
 
     // Check for player-enemy collision
     if (checkPointEnemyCollision(gameState.playerX, gameState.playerY, enemy)) {
@@ -167,7 +189,7 @@ const drawLoop = () => {
 
   // Draw bullets
   ctx.fillStyle = "#0D0";
-  bullets.forEach((bullet) => ctx.fillRect(bullet[0], bullet[1], 5, 5));
+  bullets.forEach((bullet) => ctx.fillRect(bullet.x, bullet.y, 5, 5));
 
   // Draw enemies
   enemies.forEach((enemy) => {
