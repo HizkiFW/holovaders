@@ -1,12 +1,16 @@
 let canvas = null;
-let gameData = {
+let ctx = null;
+let gameState = {
   playerX: 400,
   playerY: 500,
+  isPlayerDead: false,
 };
 let keyStates = {
   ArrowLeft: false,
   ArrowRight: false,
 };
+// Bullet info
+// [x, y]
 let bullets = [];
 let enemies = [];
 // Offset in units (not pixels)
@@ -26,15 +30,21 @@ window.onkeyup = (e) => {
   keyStates[e.key] = false;
 };
 
-const handleShoot = () => {
-  bullets.push([gameData.playerX, gameData.playerY]);
-};
-
 window.onload = () => {
-  canvas = document.getElementById("game");
+  initCanvas();
   initEnemies();
+
   drawLoop();
   physicsLoop();
+};
+
+const handleShoot = () => {
+  bullets.push([gameState.playerX, gameState.playerY]);
+};
+
+const initCanvas = () => {
+  canvas = document.getElementById("game");
+  ctx = canvas.getContext("2d");
 };
 
 const initEnemies = () => {
@@ -58,34 +68,42 @@ const physicsLoop = () => {
   physicsFrame++;
   setTimeout(physicsLoop, 1000 / 60);
 
+  if (gameState.isPlayerDead) return;
+
   // Handle key down
   if (keyStates.ArrowLeft) {
-    gameData.playerX -= 5;
+    gameState.playerX -= 5;
   }
   if (keyStates.ArrowRight) {
-    gameData.playerX += 5;
+    gameState.playerX += 5;
   }
 
   // Prevent player going off screen
-  if (gameData.playerX > canvas.width) gameData.playerX = canvas.width;
-  else if (gameData.playerX < 0) gameData.playerX = 0;
+  if (gameState.playerX > canvas.width) gameState.playerX = canvas.width;
+  else if (gameState.playerX < 0) gameState.playerX = 0;
 
   // Update bullet positions and remove off-screen ones
   bullets = bullets
     .map((bullet) => [bullet[0], bullet[1] - 5])
     .filter((bullet) => bullet[1] > 0);
 
-  // Check for collision
-  bullets.forEach((bullet, i) => {
-    enemies.forEach((enemy, j) => {
+  enemies.forEach((enemy, iE) => {
+    // Check for bullet-enemy collision
+    bullets.forEach((bullet, iB) => {
       if (checkPointEnemyCollision(bullet[0], bullet[1], enemy)) {
         // Enemy hit by bullet
         // Destroy bullet
-        bullets[i][1] = -1;
+        bullets[iB][1] = -1;
         // Destroy enemy
-        enemies[j].y = -9999;
+        enemies[iE].y = -9999;
       }
     });
+
+    // Check for player-enemy collision
+    if (checkPointEnemyCollision(gameState.playerX, gameState.playerY, enemy)) {
+      // Player is dead
+      gameState.isPlayerDead = true;
+    }
   });
 
   // Clean up enemies
@@ -114,18 +132,16 @@ const drawLoop = () => {
   drawFrame++;
   requestAnimationFrame(drawLoop);
 
-  const ctx = canvas.getContext("2d");
-
-  const imgPlayer = document.getElementById("imgPlayer");
-
+  // Clear screen
   ctx.fillStyle = "#000";
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
   // Draw player
+  const imgPlayer = document.getElementById("imgPlayer");
   ctx.drawImage(
     imgPlayer,
-    gameData.playerX - imgPlayer.width / 2,
-    gameData.playerY
+    gameState.playerX - imgPlayer.width / 2,
+    gameState.playerY
   );
 
   // Draw bullets
@@ -140,4 +156,20 @@ const drawLoop = () => {
       enemy.y + enemyOffset[1] * enemyOffsetStep[1]
     );
   });
+
+  // Game over screen
+  if (gameState.isPlayerDead) {
+    ctx.font = "48px monospace";
+    ctx.textAlign = "center";
+    ctx.fillStyle = "#FFF";
+    ctx.fillRect(0, canvas.height / 2 - 40, canvas.width, 70);
+    ctx.fillStyle = "#000";
+    ctx.fillText("Game Over", canvas.width / 2, canvas.height / 2);
+    ctx.font = "24px monospace";
+    ctx.fillText(
+      "Refresh to restart",
+      canvas.width / 2,
+      canvas.height / 2 + 24
+    );
+  }
 };
