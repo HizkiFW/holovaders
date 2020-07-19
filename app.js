@@ -187,10 +187,6 @@ const drawLoop = () => {
     gameState.playerY
   );
 
-  // Draw bullets
-  ctx.fillStyle = "#0D0";
-  bullets.forEach((bullet) => ctx.fillRect(bullet.x, bullet.y, 5, 5));
-
   // Draw enemies
   enemies.forEach((enemy) => {
     ctx.drawImage(
@@ -200,12 +196,18 @@ const drawLoop = () => {
     );
   });
 
+  // Draw bullets
+  ctx.fillStyle = "#0D0";
+  bullets.forEach((bullet) => ctx.fillRect(bullet.x, bullet.y, 5, 5));
+
   // Draw score
   drawScoreText();
 
   // Game over screen
   if (gameState.isPlayerDead) {
-    drawCenterText("Game Over", "Refresh to restart");
+    if (physicsFrame % 120 > 60)
+      drawCenterText("Game Over", "Refresh to restart");
+    else drawCenterText("Game Over", `Your score: ${gameState.score}`);
   } else if (!gameState.isGameStarted) {
     drawCenterText("HOLOVADERS", "Press [space] to start");
   }

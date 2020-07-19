@@ -1,3 +1,30 @@
 .hidden {
   display: none;
 }
+
+body,
+html {
+  margin: 0;
+}
+
+#container {
+  position: absolute;
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  background: #000;
+}
+
+#center {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+}
+
+#game {
+  width: 800px;
+  height: 600px;
+  border: 1px solid #fff;
+}
