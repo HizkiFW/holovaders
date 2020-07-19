@@ -39,6 +39,7 @@ window.onkeyup = (e) => {
 window.onload = () => {
   initCanvas();
   initEnemies();
+  initShields();
 
   drawLoop();
   physicsLoop();
@@ -74,12 +75,17 @@ const initCanvas = () => {
 
 const initShields = () => {
   const paddingH = 100;
+  const shieldWidth = 50;
   const nShields = 3;
+  const distApart = canvas.width / nShields;
 
   for (let i = 0; i < nShields; i++) {
     shields.push({
-      x: paddingH + (canvas.width - 2 * paddingH) / nShields,
-      health: 100,
+      x: paddingH + i * distApart,
+      y: 420,
+      width: shieldWidth,
+      health: 50,
+      maxHealth: 50,
     });
   }
 };
@@ -128,14 +134,7 @@ const physicsLoop = () => {
   if (gameState.playerX > canvas.width) gameState.playerX = canvas.width;
   else if (gameState.playerX < 0) gameState.playerX = 0;
 
-  // Update bullet positions and remove off-screen ones
-  bullets = bullets
-    .map((bullet) => ({
-      ...bullet,
-      y: bullet.y + (bullet.fromPlayer ? -5 : 5),
-    }))
-    .filter((bullet) => bullet.y > 0);
-
+  // Collision checks
   enemies.forEach((enemy, iE) => {
     // Check for bullet-enemy collision
     bullets.forEach((bullet, iB) => {
@@ -157,6 +156,21 @@ const physicsLoop = () => {
     }
   });
 
+  // Check bullet-shield collision
+  shields.forEach((shield, iS) => {
+    bullets.forEach((bullet, iB) => {
+      if (
+        bullet.x > shield.x &&
+        bullet.x < shield.x + shield.width &&
+        bullet.y > shield.maxHealth - shield.health + shield.y &&
+        bullet.y < shield.maxHealth + shield.y
+      ) {
+        shields[iS].health -= 5;
+        bullets[iB].y = -1;
+      }
+    });
+  });
+
   // Check bullet-player collision
   bullets
     .filter((bullet) => !bullet.fromPlayer)
@@ -172,6 +186,14 @@ const physicsLoop = () => {
   if (enemies.length === 0) {
     initEnemies();
   }
+
+  // Update bullet positions and remove off-screen ones
+  bullets = bullets
+    .map((bullet) => ({
+      ...bullet,
+      y: bullet.y + (bullet.fromPlayer ? -5 : 5),
+    }))
+    .filter((bullet) => bullet.y > 0);
 
   // Update enemy positions
   if (physicsFrame % 30 === 0) {
@@ -230,6 +252,17 @@ const drawLoop = () => {
       enemy.sprite,
       enemy.x + enemyOffset[0] * enemyOffsetStep[0],
       enemy.y + enemyOffset[1] * enemyOffsetStep[1]
+    );
+  });
+
+  // Draw shields
+  ctx.fillStyle = "#FFF";
+  shields.forEach((shield) => {
+    ctx.fillRect(
+      shield.x,
+      shield.maxHealth - shield.health + shield.y,
+      shield.width,
+      shield.health
     );
   });
 
