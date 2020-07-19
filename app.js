@@ -160,12 +160,13 @@ const physicsLoop = () => {
   shields.forEach((shield, iS) => {
     bullets.forEach((bullet, iB) => {
       if (
+        shield.health > 0 &&
         bullet.x > shield.x &&
         bullet.x < shield.x + shield.width &&
         bullet.y > shield.maxHealth - shield.health + shield.y &&
-        bullet.y < shield.maxHealth + shield.y
+        bullet.y < shield.maxHealth + shield.y + 5
       ) {
-        shields[iS].health -= 5;
+        shields[iS].health -= 1;
         bullets[iB].y = -1;
       }
     });
@@ -256,8 +257,10 @@ const drawLoop = () => {
   });
 
   // Draw shields
-  ctx.fillStyle = "#FFF";
   shields.forEach((shield) => {
+    ctx.fillStyle = "#888";
+    ctx.fillRect(shield.x, shield.y, shield.width, shield.maxHealth);
+    ctx.fillStyle = "#FFF";
     ctx.fillRect(
       shield.x,
       shield.maxHealth - shield.health + shield.y,
