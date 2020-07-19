@@ -75,12 +75,39 @@ const physicsLoop = () => {
     .map((bullet) => [bullet[0], bullet[1] - 5])
     .filter((bullet) => bullet[1] > 0);
 
+  // Check for collision
+  bullets.forEach((bullet, i) => {
+    enemies.forEach((enemy, j) => {
+      if (checkPointEnemyCollision(bullet[0], bullet[1], enemy)) {
+        // Enemy hit by bullet
+        // Destroy bullet
+        bullets[i][1] = -1;
+        // Destroy enemy
+        enemies[j].y = -9999;
+      }
+    });
+  });
+
+  // Clean up enemies
+  enemies = enemies.filter((enemy) => enemy.y >= 0);
+
   // Update enemy positions
   if (physicsFrame % 30 === 0) {
     if (enemyOffset[1] % 2 === 0) enemyOffset[0]++;
     else enemyOffset[0]--;
     if (enemyOffset[0] >= enemyStepsX || enemyOffset[0] <= 0) enemyOffset[1]++;
   }
+};
+
+const checkPointEnemyCollision = (pointX, pointY, enemy) => {
+  const enemyX = enemy.x + enemyOffset[0] * enemyOffsetStep[0];
+  const enemyY = enemy.y + enemyOffset[1] * enemyOffsetStep[1];
+  return (
+    pointX > enemyX &&
+    pointY > enemyY &&
+    pointX < enemyX + enemy.sprite.width &&
+    pointY < enemyY + enemy.sprite.height
+  );
 };
 
 const drawLoop = () => {
